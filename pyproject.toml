@@ -1,7 +1,7 @@
 [project]
-name = "project"
+name = "CS182-Project"
 version = "0.1.0"
-description = "Add your description here"
+description = "Research project exploring mechanistic interpretability of learning dynamics in game-playing neural networks."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
