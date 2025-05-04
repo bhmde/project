@@ -1,24 +1,18 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import random_split, DataLoader
 
 from project.data.utility import utility_dataframe
 from project.models.mlp import MLPClassifier
-from project.utils.datasets import tensor_dataset
+from project.utils.datasets import tensor_dataset, data_loaders
 from project.training import train_epoch, evaluate
 
 
 def train_utility_evaluator():
-    df = utility_dataframe("mnk_3_3_3")
+
+    df = utility_dataframe(game="mnk_3_3_3")
     ds = tensor_dataset(df=df, label="utility")
-
-    train_size = int(0.8 * len(ds))
-    val_size = len(ds) - train_size
-    train_ds, val_ds = random_split(ds, [train_size, val_size])
-
-    t_loader = DataLoader(train_ds, batch_size=64, shuffle=True, num_workers=4)
-    v_loader = DataLoader(val_ds, batch_size=64, shuffle=False, num_workers=4)
+    t_loader, v_loader = data_loaders(ds=ds, split=0.8, batch=64)
 
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = MLPClassifier(input_dim=64, hidden_dims=[128, 64], num_classes=3)
