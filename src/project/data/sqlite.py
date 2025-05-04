@@ -57,6 +57,11 @@ def query_dataloader(
     return ds, loader
 
 
+# -------------------
+# TRANSFORM UTILITIES
+# -------------------
+
+
 def compose_transforms(*funcs):
     def _inner(df):
         label = None
@@ -65,11 +70,6 @@ def compose_transforms(*funcs):
         return (df, label)
 
     return _inner
-
-
-# ----------
-# TRANSFORMS
-# ----------
 
 
 def expand_binary_feature(
