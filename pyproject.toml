@@ -1,7 +1,15 @@
 [project]
-name = "CS182-Project"
-version = "0.1.0"
+name = "cs182-project"
 description = "Research project exploring mechanistic interpretability of learning dynamics in game-playing neural networks."
+authors = [
+	{ name = "Bradley Arias", email = "bradley.arias@berkeley.edu" },
+	{ name = "Max Fierro", email = "maxfierro@berkeley.edu" },
+	{ name = "Humberto Gutierrez", email = "humbertogtze@berkeley.edu" },
+	{ name = "Dmytro Krukovskyi", email = "dkruk@berkeley.edu" },
+	{ name = "Elliot Meldrum", email = "emeldrum@berkeley.edu" },
+]
+version = "0.1.0"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
 dependencies = []
