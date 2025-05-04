@@ -7,6 +7,7 @@ from project.data.sqlite import (
 )
 
 
+# Produce [64x(state_bit={0,1}), utility={0,1}]
 def utility_dataset(game: str) -> pd.DataFrame:
     return query_dataloader(
         db="solutions.db",
@@ -25,6 +26,7 @@ def utility_dataset(game: str) -> pd.DataFrame:
     )
 
 
+# Produce [64x(state_bit={0,1}), utility={0,1}, ...other features]
 def utility_dataset_interp(game: str) -> pd.DataFrame:
     return query_dataloader(
         db="solutions.db",

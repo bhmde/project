@@ -55,8 +55,6 @@ def evaluate(model, loader, criterion, device):
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # 1) Load full dataset from SQLite
     df = utility_dataset("mnk_3_3_3")
 
     label_col = "utility"
@@ -67,27 +65,19 @@ def main():
     y = torch.tensor(df_label.values, dtype=torch.int64)
     ds = TensorDataset(X, y)
 
-    # 2) Split into train/val
     train_size = int(0.8 * len(ds))
     val_size = len(ds) - train_size
     train_ds, val_ds = random_split(ds, [train_size, val_size])
-
     train_loader = DataLoader(
         train_ds, batch_size=64, shuffle=True, num_workers=4
     )
-    val_loader = DataLoader(val_ds, batch_size=64, shuffle=False, num_workers=4)
 
-    # 3) Model, optimizer, loss
+    val_loader = DataLoader(val_ds, batch_size=64, shuffle=False, num_workers=4)
     model = MLPClassifier(input_dim=64, hidden_dims=[128, 64], num_classes=3)
     model.to(device)
 
-    # Choose loss based on your model’s output:
-    # - binary: nn.BCEWithLogitsLoss()
-    # - multi‑class: nn.CrossEntropyLoss()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
-
-    # 4) Training loop
     num_epochs = 20
     for epoch in range(1, num_epochs + 1):
         train_loss, train_acc = train_epoch(
@@ -100,6 +90,3 @@ def main():
             f"Train loss: {train_loss:.4f}, acc: {train_acc:.3f} | "
             f"Val loss: {val_loss:.4f}, acc: {val_acc:.3f}"
         )
-
-    # 5) Save final model
-    torch.save(model.state_dict(), "final_model.pt")

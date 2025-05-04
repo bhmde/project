@@ -44,18 +44,21 @@ def compose(*funcs):
 
 
 def expand_binary_feature(df: pd.DataFrame, column: str) -> pd.DataFrame:
-
-    # 1) extract the integer column
+    # 1) extract the integer column as uint64
     arr = df[column].to_numpy(dtype=np.uint64)
 
-    # 2) unpack bits little‑endian into shape
+    # 2) unpack bits little‑endian into shape (N, 64)
     bytes_arr = arr.view(np.uint8).reshape(-1, 8)
-    bits = np.unpackbits(bytes_arr, axis=1, bitorder="little")
+    bits = np.unpackbits(bytes_arr, axis=1, bitorder="little")  # shape (N,64)
 
-    # 3) make new DataFrame of bit columns
+    # 3) map {0,1} → {-1,1}
+    bits = bits.astype(np.int64) * 2 - 1
+
+    # 4) make new DataFrame of bit columns
     bit_cols = [f"{column}_bit{i}" for i in range(64)]
     bits_df = pd.DataFrame(bits, columns=bit_cols, index=df.index)
 
-    # 4) drop the original integer column, concat bits
+    # 5) drop the original integer column, concat bits back onto df
     df2 = pd.concat([df.drop(columns=[column]), bits_df], axis=1)
+
     return df2
