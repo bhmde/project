@@ -12,7 +12,7 @@ version = "0.1.0"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = ["sqlite3", "pandas", "torch"]
+dependencies = ["pandas", "torch", "numpy"]
 
 [project.scripts]
 cli = "project.scripts:main"

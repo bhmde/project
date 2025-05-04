@@ -1,8 +1,13 @@
 import sqlite3
 import pandas as pd
+import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from typing import List, Tuple
+from typing import List, Tuple, Callable, Optional, Union
+
+TransformFn = Callable[
+    [pd.DataFrame], Union[pd.DataFrame, Tuple[pd.DataFrame, List[str]]]
+]
 
 
 def query_dataloader(
@@ -12,35 +17,33 @@ def query_dataloader(
     batch_size: int = 64,
     num_workers: int = 4,
     db_path: str = "solutions.db",
+    transform: Optional[TransformFn] = None,
 ) -> Tuple[TensorDataset, DataLoader]:
-    """
-    Load data from a SQLite table into a PyTorch DataLoader.
-
-    Args:
-        table: name of the table to query.
-        label: name of the column to use as the label (default "label").
-        features: list of column names to use as features.
-        batch_size: batch size for DataLoader.
-        num_workers: number of worker processes for DataLoader.
-        db_path: path to the SQLite database file.
-
-    Returns:
-        ds: TensorDataset of (features, labels).
-        loader: DataLoader wrapping that dataset.
-    """
 
     # 1) Load the requested columns into a DataFrame
-    cols = features + [label]
-    query = f"SELECT {', '.join(cols)} FROM {table}"
-    con = sqlite3.connect(db_path)
-    df = pd.read_sql_query(query, con)
-    con.close()
+    initial_cols = features + [label]
+    query = f"SELECT {', '.join(initial_cols)} FROM {table}"
+    with sqlite3.connect(db_path) as con:
+        df = pd.read_sql_query(query, con)
 
-    # 2) Split out features and labels
-    X = torch.tensor(df[features].values, dtype=torch.float32)
-    y = torch.tensor(df[label].values, dtype=torch.long)
+    # 2) Apply optional transform
+    if transform is not None:
+        result = transform(df)
+        if isinstance(result, tuple):
+            df, feature_cols = result
+        else:
+            df = result
+            features = [c for c in df.columns if c != label]
 
-    # 3) Create dataset and loader
+    # 3) Cast feature & label columns to int64
+    df_features = df[features].astype("int64")
+    df_label = df[label].astype("int64")
+
+    # 4) Convert to torch tensors
+    X = torch.tensor(df_features.values, dtype=torch.int64)
+    y = torch.tensor(df_label.values, dtype=torch.int64)
+
+    # 5) Build dataset + loader
     ds = TensorDataset(X, y)
     loader = DataLoader(
         ds,
@@ -50,3 +53,26 @@ def query_dataloader(
     )
 
     return ds, loader
+
+
+def expand_binary_feature(
+    df: pd.DataFrame, column: str
+) -> Tuple[pd.DataFrame, List[str]]:
+
+    # 1) extract the integer column
+    arr = df[column].to_numpy(dtype=np.uint64)
+
+    # 2) unpack bits little‑endian into shape
+    bytes_arr = arr.view(np.uint8).reshape(-1, 8)
+    bits = np.unpackbits(bytes_arr, axis=1, bitorder="little")
+
+    # 3) make new DataFrame of bit columns
+    bit_cols = [f"{column}_bit{i}" for i in range(64)]
+    bits_df = pd.DataFrame(bits, columns=bit_cols, index=df.index)
+
+    # 4) drop the original integer column, concat bits
+    df2 = pd.concat([df.drop(columns=[column]), bits_df], axis=1)
+
+    # 5) return new df and the new feature_cols list
+    new_features: List[str] = [c for c in df2.columns if c != "label"]
+    return df2, new_features
