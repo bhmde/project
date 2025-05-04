@@ -1,6 +1,6 @@
 # Mechanistic Interpretability of Learning Dynamics in Game-Playing Neural Networks
 
-Elliot Meldrum, Bradley Arias, Max Fierro, Dmytro Krukovskyi, Humberto Gutierrez
+Bradley Arias, Max Fierro, Humberto Gutierrez, Dmytro Krukovskyi, Elliot Meldrum
 
 ---
 
