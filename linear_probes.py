@@ -18,7 +18,7 @@ Four labels templated.
 *   **value**              – game‑theoretic utility class ( –1 / 0 / +1 )
 *   **is_win_next**        – binary: current player has an immediate win
 *   **plys_to_end**        – integer: optimal distance‑to‑terminal (regression)
-*   **symmetry_class**     – categorical ID of board under D₄ symmetries
+*   **symmetry_class**     – categorical ID of board symmetries
 
 """
 

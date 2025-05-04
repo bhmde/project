@@ -8,10 +8,10 @@ from typing import List
 
 if torch.cuda.is_available():
     DEVICE = torch.device("cuda")
-elif getattr(torch.backends, "mps") and torch.backends.mps.is_available():
-    torch.device("mps")
+elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    DEVICE = torch.device("mps")
 else:
-    torch.device("cpu")
+    DEVICE = torch.device("cpu")
 
 def main(argv: List[str]) -> None:
     parser = argparse.ArgumentParser(description="Run a linear probe on a frozen model.")
