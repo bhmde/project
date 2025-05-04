@@ -40,12 +40,5 @@ def expand_state_vector(df: pd.DataFrame) -> TransformResult:
 
 
 def select_turn_utility(df: pd.DataFrame) -> TransformResult:
-    df2 = pd.DataFrame(
-        {
-            "state": df["state"],
-            "utility": df["utility_p0"].where(
-                df["turn"] == 0, df["utility_p1"]
-            ),
-        }
-    )
-    return (df2, "utility")
+    df["utility"] = df["utility_p0"].where(df["turn"] == 0, df["utility_p1"])
+    return df, "utility"
