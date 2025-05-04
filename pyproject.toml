@@ -15,9 +15,7 @@ requires-python = ">=3.11"
 dependencies = ["pandas", "torch", "numpy"]
 
 [project.scripts]
-train_models = "project.scripts:train"
-train_probes = "project.scripts:probe"
-main = "project.training:main"
+train = "project.scripts:train_utility_evaluator"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/project"]
