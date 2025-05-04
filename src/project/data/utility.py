@@ -1,31 +1,38 @@
 import pandas as pd
-from typing import Tuple
-from torch.utils.data import TensorDataset, DataLoader
 
-from data.sqlite import (
+from project.data.sqlite import (
     query_dataloader,
     expand_binary_feature,
-    compose_transforms,
-    TransformResult,
+    compose,
 )
 
 
-def utility_dataset(
-    game: str, batch_size: int
-) -> Tuple[TensorDataset, DataLoader]:
-    ds, loader = query_dataloader(
+def utility_dataset(game: str) -> pd.DataFrame:
+    return query_dataloader(
         db="solutions.db",
         table=game,
         columns=[
-            "utility_p0",
-            "utility_p1",
+            "utility_0",
+            "utility_1",
+            "player",
             "state",
-            "turn",
         ],
-        batch_size=batch_size,
-        transform=compose_transforms(
+        transform=compose(
             expand_state_vector,
-            select_turn_utility,
+            replace_turn_utility,
+            discard_turn,
+        ),
+    )
+
+
+def utility_dataset_interp(game: str) -> pd.DataFrame:
+    return query_dataloader(
+        db="solutions.db",
+        table=game,
+        transform=compose(
+            expand_state_vector,
+            replace_turn_utility,
+            discard_turn,
         ),
     )
 
@@ -35,10 +42,18 @@ def utility_dataset(
 # ----------
 
 
-def expand_state_vector(df: pd.DataFrame) -> TransformResult:
+def expand_state_vector(df: pd.DataFrame) -> pd.DataFrame:
     return expand_binary_feature(df=df, column="state")
 
 
-def select_turn_utility(df: pd.DataFrame) -> TransformResult:
-    df["utility"] = df["utility_p0"].where(df["turn"] == 0, df["utility_p1"])
-    return df, "utility"
+def replace_turn_utility(df: pd.DataFrame) -> pd.DataFrame:
+    df["utility"] = df["utility_0"].where(df["player"] == 0, df["utility_1"])
+    df["utility"] = df["utility"].where(df["utility"] == 1, 0)
+    del df["utility_0"]
+    del df["utility_1"]
+    return df
+
+
+def discard_turn(df: pd.DataFrame) -> pd.DataFrame:
+    del df["player"]
+    return df
