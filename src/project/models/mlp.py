@@ -1,24 +1,28 @@
 import torch
 import torch.nn as nn
+from collections import OrderedDict
 
 
 class MLPClassifier(nn.Module):
     def __init__(
         self,
         input_dim: int = 64,
-        hidden_dims: list[int] = [128, 64],
         num_classes: int = 3,
     ):
         super().__init__()
-        layers: list[nn.Module] = []
-        in_dim = input_dim
-        for h in hidden_dims:
-            layers.append(nn.Linear(in_dim, h))
-            layers.append(nn.ReLU(inplace=True))
-            in_dim = h
-
-        layers.append(nn.Linear(in_dim, num_classes))
-        self.net = nn.Sequential(*layers)
+        self.net = nn.Sequential(
+            OrderedDict(
+                [
+                    ("fc1", nn.Linear(input_dim, 128)),
+                    ("relu1", nn.ReLU(inplace=True)),
+                    ("fc2", nn.Linear(128, 128)),
+                    ("relu2", nn.ReLU(inplace=True)),
+                    ("fc3", nn.Linear(128, 64)),
+                    ("relu3", nn.ReLU(inplace=True)),
+                    ("head", nn.Linear(64, num_classes)),
+                ]
+            )
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.float()

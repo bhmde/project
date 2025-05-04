@@ -1,9 +1,10 @@
 import argparse
 
 from project.training import train_utility_evaluator
+from project.models.mlp import MLPClassifier
+from project.activations import generate_model_activations
 
 
-# Train a position evaluation MLP on an input game.
 def train_evaluator():
 
     parser = argparse.ArgumentParser(
@@ -20,3 +21,30 @@ def train_evaluator():
 
     args = parser.parse_args()
     train_utility_evaluator(args.game)
+
+
+def generate_activations():
+
+    parser = argparse.ArgumentParser(
+        prog="gen-activations",
+        description=(
+            "Generate a dataframe of activations per existing checkpoint.",
+        ),
+    )
+
+    parser.add_argument(
+        "-g",
+        "--game",
+        help="Game variant to generate activations for.",
+        default="mnk_3_3_3",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--model",
+        help="Model to generate activations for.",
+        default=f"{MLPClassifier.name()}",
+    )
+
+    args = parser.parse_args()
+    generate_model_activations(args.game, args.model)
