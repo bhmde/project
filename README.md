@@ -26,13 +26,17 @@ Then, to format your changes with `black`:
 uv run black .
 ```
 
-To run with `uv`,
+To run with `uv`, first ensure it has installed all the packages you will need:
 
 ```
-uv run script
+uv sync
 ```
 
-where `script` is the name of the preconfigured script to run (see below).
+Then execute a script (see below for options):
+
+```
+uv run <script>
+```
 
 ## Scripts
 
