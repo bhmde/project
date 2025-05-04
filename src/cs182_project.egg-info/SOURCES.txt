@@ -1,0 +1,8 @@
+LICENSE
+README.md
+pyproject.toml
+src/cs182_project.egg-info/PKG-INFO
+src/cs182_project.egg-info/SOURCES.txt
+src/cs182_project.egg-info/dependency_links.txt
+src/cs182_project.egg-info/top_level.txt
+src/project/__init__.py
