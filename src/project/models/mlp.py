@@ -24,3 +24,6 @@ class MLPClassifier(nn.Module):
         x = x.float()
         logits = self.net(x)
         return logits
+
+    def name(self) -> str:
+        return "MLPClassifier"
