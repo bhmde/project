@@ -6,7 +6,7 @@ Bradley Arias, Max Fierro, Humberto Gutierrez, Dmytro Krukovskyi, Elliot Meldrum
 
 We investigate the relationship between interpretability and learning dynamics within neural networks that optimize for two computationally equivalent game-theoretic tasks; decision-making and utility evaluation. In the decision-making network, we use a selection of probes to determine the recoverability of interpretable features over the course of training. In the evaluation network, we analyze the preservation of algebraic properties of the native state representations across training epochs through dimensionality reduction and mechanistic analysis of intermediate activations. We leverage our access to a strong solution of the game underlying these tasks to eschew the need for human selection of interpretable features and to provide ground-truth statistics which help with the interpretation of our measurements.
 
-## Contributions
+## Development 
 
 This project uses [`uv`](https://github.com/astral-sh/uv) for dependency management. To install:
 
