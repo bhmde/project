@@ -12,9 +12,10 @@ version = "0.1.0"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
+dependencies = ["sqlite3", "pandas", "torch"]
 
 [project.scripts]
-cli = "project.cli:main"
+cli = "project.scripts:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/project"]
@@ -22,6 +23,9 @@ packages = ["src/project"]
 [build-system]
 requires = ["hatchling>=1.13,<2"]
 build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
 
 [tool.black]
 line-length = 80
