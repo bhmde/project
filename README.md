@@ -8,7 +8,7 @@ We investigate the relationship between interpretability and learning dynamics w
 
 ## Development 
 
-This project uses [`uv`](https://github.com/astral-sh/uv) for dependency management. To install:
+This project uses [`uv`](https://github.com/astral-sh/uv). To install:
 
 ```
 curl -LsSf https://astral.sh/uv/install.sh | sh
