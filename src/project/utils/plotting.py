@@ -18,8 +18,6 @@ def plot_accuracy(accuracy: list[float], title: str, xlabel: str, ylabel: str):
     plt.show()
 
 
-
-
 def plot_feature_scores(
     features: List[str],
     scores: List[List[float]],
