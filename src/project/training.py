@@ -5,12 +5,39 @@ import pandas as pd
 import torch.nn as nn
 import torch.optim as optim
 from typing import Optional
+from threading import Lock
+from pathlib import Path
 
 from project.data.utility import utility_dataframe
 from project.models.mlp import MLPClassifier
 from project.models.probes import LinearProbe
 from project.utils.datasets import tensor_dataset, data_loaders
 from project.utils.checkpoints import save_model_epoch
+
+
+METRICS_DIR = Path("reports")
+_METRICS_LOCK = Lock()
+
+
+def log(name: str, value: float) -> None:
+    METRICS_DIR.mkdir(parents=True, exist_ok=True)
+    metric_file = METRICS_DIR / f"{name}.npy"
+
+    with _METRICS_LOCK:
+        if metric_file.exists():
+            arr = np.load(metric_file)
+        else:
+            arr = np.empty((0,), dtype=float)
+
+        arr = np.append(arr, value)
+        np.save(metric_file, arr)
+
+
+def load_metric(name: str) -> np.ndarray:
+    metric_file = METRICS_DIR / f"{name}.npy"
+    if not metric_file.exists():
+        return np.empty((0,), dtype=float)
+    return np.load(metric_file)
 
 
 def train_utility_evaluator(game: str):
@@ -26,10 +53,15 @@ def train_utility_evaluator(game: str):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
-    num_epochs = 10
+    num_epochs = 30
     for epoch in range(1, num_epochs + 1):
         t_loss, t_acc = train_epoch(model, t_loader, optimizer, criterion, dev)
         v_loss, v_acc = evaluate(model, v_loader, criterion, dev)
+
+        log("util-eval-epoch-train-loss", t_loss)
+        log("util-eval-epoch-valid-loss", v_loss)
+        log("util-eval-epoch-train-accu", t_acc)
+        log("util-eval-epoch-valid-accu", v_acc)
 
         print(
             f"Epoch {epoch:02d} "
@@ -37,10 +69,9 @@ def train_utility_evaluator(game: str):
             f"Val loss: {v_loss:.4f}, acc: {v_acc:.3f}"
         )
 
-        if epoch % 2 == 0:
-            save_model_epoch(
-                epoch=epoch, game=game, name=MLPClassifier.name(), model=model
-            )
+        save_model_epoch(
+            epoch=epoch, game=game, name=MLPClassifier.name(), model=model
+        )
 
 
 def fit_ols_probe(
@@ -82,11 +113,11 @@ def fit_ols_probe(
     if shuffle:
         np.random.shuffle(y)
 
-    probe = fit_probe_closed_form(X, y, device, fit_intercept)
+    probe, mse = fit_probe_closed_form(X, y, device, fit_intercept)
     torch.save(probe.state_dict(), weights_file)
     print(f"Saved probe for '{feature}' to {weights_file}")
 
-    return probe
+    return mse
 
 
 # ----------------
@@ -172,6 +203,9 @@ def fit_probe_closed_form(
     # w_aug shape (D+1, K) if intercept, else (D, K)
     w_aug, *_ = np.linalg.lstsq(X_design, y, rcond=None)
 
+    y_pred = X_design @ w_aug
+    mse = np.mean((y_pred - y) ** 2)
+
     # Extract weights and bias
     if fit_intercept:
         W = w_aug[:-1, :].T  # (K, D)
@@ -185,4 +219,4 @@ def fit_probe_closed_form(
     probe.linear.weight.data = torch.from_numpy(W).to(device, torch.float32)
     probe.linear.bias.data = torch.from_numpy(b).to(device, torch.float32)
 
-    return probe
+    return probe, mse
