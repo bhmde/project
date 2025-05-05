@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from collections import OrderedDict
 
-
 class MLPClassifier(nn.Module):
     def __init__(
         self,
@@ -29,5 +28,5 @@ class MLPClassifier(nn.Module):
         logits = self.net(x)
         return logits
 
-    def name(self) -> str:
+    def name() -> str:
         return "MLPClassifier"
