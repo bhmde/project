@@ -50,12 +50,11 @@ def generate_activations():
     args = parser.parse_args()
     generate_model_activations(args.game, args.model)
 
+
 def feature_visualization():
     parser = argparse.ArgumentParser(
         prog="feature-visualization",
-        description=(
-            "Visualize features from a trained neural network.",
-        ),
+        description=("Visualize features from a trained neural network.",),
     )
 
     parser.add_argument(

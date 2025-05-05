@@ -85,7 +85,10 @@ def generate_checkpoint_activations(
     df_out = pd.concat([df, act_df], axis=1)
 
     # --- 6) optional save ---
-    print(df_out)
+    print(
+        f"Output DataFrame has {df_out.shape[0]} rows and "
+        f"{D} activation columns" + (f", saved to {into}" if into else "")
+    )
     if into:
         df_out.to_csv(into, index=False)
 
