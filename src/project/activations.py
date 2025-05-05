@@ -30,13 +30,12 @@ def generate_checkpoint_activations(game: str, epoch: str, into: str):
     model.eval()
 
     for name, module in model.net.named_modules():
-
         if name == layer_observed:
             module.register_forward_hook(get_hook(name))
 
     df = utility_dataframe(game=game)
     ds = tensor_dataset(df=df, label="utility")
-    _, loader = data_loaders(ds=ds, split=0.1, batch=64)
+    _, loader = data_loaders(ds=ds, split=0.1, batch=1)
     
     records = []
     for X_batch, y_batch in loader:
@@ -48,9 +47,11 @@ def generate_checkpoint_activations(game: str, epoch: str, into: str):
         for i in act.numpy():
             for j, val in enumerate(i):
                 rec[f"act_{j}"] = float(val)
+            rec | X_batch.numpy()
             records.append(rec)
     
     df = pd.DataFrame.from_records(records)
+    print(df.columns)
 
 
 # ----------------
