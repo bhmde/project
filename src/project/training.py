@@ -48,7 +48,7 @@ def train_utility_evaluator(game: str):
 
     if torch.cuda.is_available():
         dev = torch.device("cuda")
-    elif torch.backends.mps.is_available() and torch.backends.backends.is_mps_available():
+    elif torch.backends.mps.is_available() and torch.backends.is_mps_available():
         dev = torch.device("mps")
     else:
         dev = torch.device( "cpu")
