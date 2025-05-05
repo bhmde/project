@@ -83,6 +83,28 @@ def train_probes():
 
 
 def run_visualization():
+    parser = argparse.ArgumentParser(
+        prog="run-visualization",
+        description=("Generate all visualizaitons.",),
+    )
+
+    parser.add_argument(
+        "-g",
+        "--game",
+        help="Game variant provide vis for.",
+        default="mnk_3_3_3",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--model",
+        help="Model to visualize for.",
+        default=f"{MLPClassifier.name()}",
+    )
+
+    args = parser.parse_args()
+    run_visualizations(args)
+
     accuracy_metrics_info = [
         {"metric": "util-eval-epoch-train-accu", "label": "Training"},
         {"metric": "util-eval-epoch-valid-accu", "label": "Validation"},
@@ -122,4 +144,3 @@ def run_visualization():
         filename="probe-vs-model",
         y_label="MSE",
     )
-    run_visualizations(args)

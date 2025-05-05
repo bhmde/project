@@ -398,7 +398,7 @@ def run_visualizations(args):
 
         # Save figure to file
         plt.savefig(
-            f"pca_{interpretable_feature}_epochs.png",
+            f"reports/visualization/pca_{interpretable_feature}_epochs.png",
             dpi=300,
             bbox_inches="tight",
         )

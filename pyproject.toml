@@ -12,7 +12,14 @@ version = "0.1.0"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = ["pandas", "torch", "numpy", "argparse", "matplotlib", "scikit-learn"]
+dependencies = [
+	"pandas",
+	"torch",
+	"numpy",
+	"argparse",
+	"matplotlib",
+	"scikit-learn",
+]
 
 [project.scripts]
 train-evaluator = "project.scripts:train_evaluator"
