@@ -26,7 +26,7 @@ def train_utility_evaluator(game: str):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
-    num_epochs = 30
+    num_epochs = 10
     for epoch in range(1, num_epochs + 1):
         t_loss, t_acc = train_epoch(model, t_loader, optimizer, criterion, dev)
         v_loss, v_acc = evaluate(model, v_loader, criterion, dev)
