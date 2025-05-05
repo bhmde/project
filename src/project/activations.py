@@ -135,6 +135,6 @@ def generate_checkpoint_activations(
         f"{D} activation columns" + (f", saved to {into}" if into else "")
     )
     if into:
-        df_out.to_csv(into, index=False)
+        df_out.to_pickle(into)
 
     return df_out
