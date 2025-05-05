@@ -27,7 +27,8 @@ def plot_feature_scores(
 ):
     if len(features) != len(scores):
         raise ValueError(
-            f"Number of features ({len(features)}) must match number of score lists ({len(scores)})"
+            f"Number of features ({len(features)}) must match"
+            + "number of score lists ({len(scores)})"
         )
 
     fig, ax = plt.subplots()
