@@ -50,24 +50,17 @@ def fit_ols_probe(
     device: Optional[torch.device] = None,
     fit_intercept: bool = True,
 ) -> torch.nn.Module:
-    """
-    Load activations from `{epoch_dir}/activations.pkl`, fit an OLS probe
-    to predict `feature`, and save the probe weights to
-    `{epoch_dir}/probes/ols/{feature}.pkl`.
-
-    Args:
-        epoch_dir: Directory containing activations.pkl and will be saved.
-        feature: The target column name to fit.
-        device: torch.device (defaults to CPU or CUDA if available).
-        fit_intercept: Whether to include a bias term.
-
-    Returns:
-        probe: A LinearProbe with weights set to the OLS solution.
-    """
 
     # 1) determine file paths
     pkl_file = os.path.join(epoch_dir, "activations.pkl")
-    weights_file = os.path.join(epoch_dir, "probes", "ols", f"{feature}.pkl")
+    weights_file = os.path.join(
+        epoch_dir,
+        "probes",
+        "ols",
+        f"{feature}{'_control' if shuffle else ''}.pkl",
+    )
+
+    # Make sure dir exists
     os.makedirs(os.path.dirname(weights_file), exist_ok=True)
 
     # 2) set device
@@ -75,6 +68,7 @@ def fit_ols_probe(
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # 3) load DataFrame
+    print(f"Loading: {pkl_file}")
     df = pd.read_pickle(pkl_file)
 
     # 4) extract activations and target
@@ -88,33 +82,7 @@ def fit_ols_probe(
     if shuffle:
         np.random.shuffle(y)
 
-    # 5) prepare for OLS
-    N, D = X.shape
-    y = y[:, None]  # (N,1)
-    if fit_intercept:
-        X_design = np.hstack([X, np.ones((N, 1), dtype=X.dtype)])
-    else:
-        X_design = X
-
-    # 6) solve least squares
-    w_aug, *_ = np.linalg.lstsq(X_design, y, rcond=None)
-
-    # 7) unpack weights and bias
-    if fit_intercept:
-        W = w_aug[:-1, :].T  # shape (1, D)
-        b = float(w_aug[-1, 0])
-    else:
-        W = w_aug.T  # shape (1, D)
-        b = 0.0
-
-    # 8) create probe and load params
-    probe = LinearProbe(input_dim=D, output_dim=1).to(device)
-    probe.linear.weight.data = torch.from_numpy(W).to(device).float()
-    probe.linear.bias.data = torch.tensor(
-        [b], dtype=torch.float32, device=device
-    )
-
-    # 9) save state_dict
+    probe = fit_probe_closed_form(X, y, device, fit_intercept)
     torch.save(probe.state_dict(), weights_file)
     print(f"Saved probe for '{feature}' to {weights_file}")
 
@@ -170,3 +138,51 @@ def evaluate(model, loader, criterion, device):
             total += y.size(0)
 
     return running_loss / total, correct / total
+
+
+def fit_probe_closed_form(
+    X: np.ndarray, y: np.ndarray, device, fit_intercept: bool = True
+):
+    """
+    Fit a LinearProbe in closed form via ordinary least squares.
+
+    Args:
+        X: array of shape (N, D) — activation features
+        y: array of shape (N,) or (N, K) — target values
+        device: torch device for the probe
+        fit_intercept: whether to include a bias term
+
+    Returns:
+        probe: LinearProbe with weights and bias set to the OLS solution
+    """
+    # Ensure y is 2D
+    if y.ndim == 1:
+        y = y[:, None]  # shape (N, 1)
+
+    N, D = X.shape
+    _, K = y.shape  # K target dimensions
+
+    # Build design matrix
+    if fit_intercept:
+        X_design = np.hstack([X, np.ones((N, 1), dtype=X.dtype)])  # (N, D+1)
+    else:
+        X_design = X  # (N, D)
+
+    # Solve (Xᵀ X) w = Xᵀ y via least squares
+    # w_aug shape (D+1, K) if intercept, else (D, K)
+    w_aug, *_ = np.linalg.lstsq(X_design, y, rcond=None)
+
+    # Extract weights and bias
+    if fit_intercept:
+        W = w_aug[:-1, :].T  # (K, D)
+        b = w_aug[-1, :]  # (K,)
+    else:
+        W = w_aug.T  # (K, D)
+        b = np.zeros(K, dtype=X.dtype)
+
+    # Create probe and assign parameters
+    probe = LinearProbe(input_dim=D, output_dim=K).to(device)
+    probe.linear.weight.data = torch.from_numpy(W).to(device, torch.float32)
+    probe.linear.bias.data = torch.from_numpy(b).to(device, torch.float32)
+
+    return probe

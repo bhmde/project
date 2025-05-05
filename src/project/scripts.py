@@ -4,6 +4,7 @@ from project.training import train_utility_evaluator
 from project.models.mlp import MLPClassifier
 from project.activations import generate_model_activations
 from project.utils.visualization import feature_vis
+from project.activations import train_probes_on_checkpoints
 
 
 def train_evaluator():
@@ -75,7 +76,7 @@ def train_probes():
     )
 
     args = parser.parse_args()
-    generate_model_activations(args.game, args.model)
+    train_probes_on_checkpoints(args.game, args.model)
 
 
 def feature_visualization():

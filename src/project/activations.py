@@ -15,14 +15,27 @@ from project.training import fit_ols_probe
 def train_probes_on_checkpoints(game: str, model: str):
     path = f"{models_directory}/{model}/{game}"
     epochs = list_directory(path)
-    features = []
+    features = [
+        "fork_exists",
+        "ply",
+        "center_control",
+        "corner_count",
+        "edge_count",
+    ]
+
     for f in features:
         for e in epochs:
-            dir = f"{path}/{e}"
+            directory = f"{path}/{e}"
             fit_ols_probe(
-                epoch_dir=dir,
+                epoch_dir=directory,
                 feature=f,
                 shuffle=False,
+            )
+
+            fit_ols_probe(
+                epoch_dir=directory,
+                feature=f,
+                shuffle=True,
             )
 
 
@@ -34,6 +47,20 @@ def generate_model_activations(game: str, model: str):
         generate_checkpoint_activations(
             game=game, epoch=e, into=act, layer="relu3"
         )
+
+
+# ----------------
+# HELPER FUNCTIONS
+# ----------------
+
+
+def list_directory(path: str) -> List[str]:
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"Directory not found: {path}")
+    if not p.is_dir():
+        raise NotADirectoryError(f"Not a directory: {path}")
+    return [item.name for item in p.iterdir()]
 
 
 def generate_checkpoint_activations(
@@ -111,17 +138,3 @@ def generate_checkpoint_activations(
         df_out.to_csv(into, index=False)
 
     return df_out
-
-
-# ----------------
-# HELPER FUNCTIONS
-# ----------------
-
-
-def list_directory(path: str) -> List[str]:
-    p = Path(path)
-    if not p.exists():
-        raise FileNotFoundError(f"Directory not found: {path}")
-    if not p.is_dir():
-        raise NotADirectoryError(f"Not a directory: {path}")
-    return [item.name for item in p.iterdir()]

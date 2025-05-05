@@ -18,7 +18,7 @@ dependencies = ["pandas", "torch", "numpy", "argparse", "matplotlib"]
 train-evaluator = "project.scripts:train_evaluator"
 gen-activations = "project.scripts:generate_activations"
 feature-visualization = "project.scripts:feature_visualization"
-train-probes = "projects.scripts:train_probes"
+train-probes = "project.scripts:train_probes"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/project"]
