@@ -48,7 +48,7 @@ def train_utility_evaluator(game: str):
 
     if torch.cuda.is_available():
         dev = torch.device("cuda")
-    elif hasattr(torch.backends, "mps") and torch.backends.is_mps_available():
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         dev = torch.device("mps")
     else:
         dev = torch.device( "cpu")
@@ -104,7 +104,7 @@ def fit_ols_probe(
     if device is None:
         if torch.cuda.is_available():
             device = torch.device("cuda")
-        elif hasattr(torch.backends, "mps") and torch.backends.backends.is_mps_available():
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             device = torch.device("mps")
         else:
             device = torch.device( "cpu")
