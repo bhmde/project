@@ -3,8 +3,6 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import List
-from probes import LinearProbe
-from typing import Dict
 from torch.utils.data import DataLoader
 
 from project.utils.datasets import tensor_dataset
@@ -98,78 +96,6 @@ def generate_checkpoint_activations(
         df_out.to_csv(into, index=False)
 
     return df_out
-
-
-def fit_ols_probes(
-    activations_pkl: str,
-    output_weights_path: str,
-    device: torch.device = None,
-    fit_intercept: bool = True,
-) -> Dict[str, Dict[str, torch.Tensor]]:
-    """
-    Load activations from a pickled DataFrame, fit one OLS linear probe per
-    interpretable feature, save all probe weights to disk, and return the
-    dict of state_dicts.
-
-    Args:
-        activations_pkl: path to the pickled DataFrame containing columns
-                         ["activation_0",..., "activation_D-1", "interp_..."].
-        output_weights_path: file path where to torch.save the probes dict.
-        device: torch.device to place the probes on (defaults to CPU).
-        fit_intercept: whether to include a bias term in each probe.
-
-    Returns:
-        A dict mapping feature names → state_dict of the fitted LinearProbe.
-    """
-    # 1) set device
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # 2) load DataFrame
-    df = pd.read_pickle(activations_pkl)
-
-    # 3) split activation vs interp columns
-    activation_cols = [c for c in df.columns if c.startswith("activation_")]
-    interp_cols = [c for c in df.columns if c.startswith("interp_")]
-
-    X = df[activation_cols].values  # shape (N, D)
-    N, D = X.shape
-
-    probes_state = {}
-
-    # 4) for each interpretable feature, solve OLS
-    for feat in interp_cols:
-        y = df[feat].values
-        # ensure 2D
-        if y.ndim == 1:
-            y = y[:, None]  # shape (N, 1)
-        # build design matrix
-        if fit_intercept:
-            X_design = np.hstack([X, np.ones((N, 1), dtype=X.dtype)])
-        else:
-            X_design = X
-        # solve least squares
-        w_aug, *_ = np.linalg.lstsq(X_design, y, rcond=None)
-        # extract weights & bias
-        if fit_intercept:
-            W = w_aug[:-1, :].T  # (K, D)
-            b = w_aug[-1, :]  # (K,)
-        else:
-            W = w_aug.T  # (K, D)
-            b = np.zeros(y.shape[1], dtype=X.dtype)
-        # instantiate probe & assign
-        output_dim = y.shape[1]
-        probe = LinearProbe(input_dim=D, output_dim=output_dim).to(device)
-        probe.linear.weight.data = torch.from_numpy(W).to(device).float()
-        probe.linear.bias.data = torch.from_numpy(b).to(device).float()
-
-        probes_state[feat] = probe.state_dict()
-
-    # 5) save all probe weights
-    torch.save(probes_state, output_weights_path)
-    print(f"Saved {len(probes_state)} OLS probes to {output_weights_path}")
-
-    return probes_state
 
 
 # ----------------
