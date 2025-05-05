@@ -3,7 +3,7 @@ import argparse
 from project.training import train_utility_evaluator
 from project.models.mlp import MLPClassifier
 from project.activations import generate_model_activations
-from project.utils.visualization import feature_vis
+from project.utils.visualization import run_visualizations
 from project.activations import train_probes_on_checkpoints
 
 
@@ -79,7 +79,7 @@ def train_probes():
     train_probes_on_checkpoints(args.game, args.model)
 
 
-def feature_visualization():
+def run_visualization():
     parser = argparse.ArgumentParser(
         prog="feature-visualization",
         description=("Visualize features from a trained neural network.",),
@@ -100,4 +100,4 @@ def feature_visualization():
     )
 
     args = parser.parse_args()
-    feature_vis(args)
+    run_visualizations(args)
