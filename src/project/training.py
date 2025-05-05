@@ -46,7 +46,13 @@ def train_utility_evaluator(game: str):
     ds = tensor_dataset(df=df, label="utility")
     t_loader, v_loader = data_loaders(ds=ds, split=0.8, batch=64)
 
-    dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        dev = torch.device("cuda")
+    elif torch.backends.mps.is_available() and torch.backends.backends.is_mps_available():
+        dev = torch.device("mps")
+    else:
+        dev = torch.device( "cpu")
+    
     model = MLPClassifier(input_dim=64, num_classes=3)
     model.to(dev)
 
@@ -96,7 +102,12 @@ def fit_ols_probe(
 
     # 2) set device
     if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif torch.backends.mps.is_available() and torch.backends.backends.is_mps_available():
+            device = torch.device("mps")
+        else:
+            device = torch.device( "cpu")
 
     # 3) load DataFrame
     print(f"Loading: {pkl_file}")
