@@ -1,10 +1,13 @@
 import torch
-import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
 from project.data.utility import utility_dataframe
 from project.utils.datasets import tensor_dataset
-
+from project.activations import list_directory
+from project.utils.checkpoints import models_directory, load_model_epoch
+from project.models.mlp import MLPClassifier
 
 def decode_board_states(state: torch.Tensor, m: int, n: int) -> torch.Tensor:
     """
@@ -122,7 +125,6 @@ def draw_board(board, turn=None, outcome=None, ax=None):
     return ax
 
 
-# Example of using draw_board with multiple boards in a grid layout
 def visualize_grid_of_boards(boards, turns=None, outcomes=None):
     """
     Visualize a sequence of game boards in a grid layout.
@@ -183,36 +185,46 @@ def feature_vis(args):
 
     dataset = tensor_dataset(df=df, label="utility")
 
-    # Example of a single board visualization
-    x, y = dataset[20]
-    print(x)
-    print(x.shape)
-    print(f"Outcome: {y.item()}")
+    # # Example of a single board visualization
+    # x, y = dataset[20]
+    # print(x)
+    # print(x.shape)
+    # print(f"Outcome: {y.item()}")
 
-    # Decode the game state
-    board, turn = decode_board_states(x.unsqueeze(0), m, n)
-    board = board.squeeze(0)
-    turn = turn.squeeze(0)
+    # # Decode the game state
+    # board, turn = decode_board_states(x.unsqueeze(0), m, n)
+    # board = board.squeeze(0)
+    # turn = turn.squeeze(0)
 
-    # Squeeze to remove batch dimension for visualization
-    print("board.shape", board.shape)
-    print("turn.shape", turn.shape)
+    # # Squeeze to remove batch dimension for visualization
+    # print("board.shape", board.shape)
+    # print("turn.shape", turn.shape)
 
-    # Use the modular draw_board function with outcome
-    fig, ax = plt.subplots(figsize=(8, 8))
-    draw_board(board, turn, y.item(), ax)
-    plt.tight_layout()
+    # # Use the modular draw_board function with outcome
+    # fig, ax = plt.subplots(figsize=(8, 8))
+    # draw_board(board, turn, y.item(), ax)
+    # plt.tight_layout()
 
-    # Visualize a grid of random boards with their outcomes
-    n_examples = 20
-    indices = torch.randint(0, len(dataset), (n_examples,))
-    x, y = dataset[indices]
-    boards, turns = decode_board_states(x, m, n)
+    # # Visualize a grid of random boards with their outcomes
+    # n_examples = 20
+    # indices = torch.randint(0, len(dataset), (n_examples,))
+    # x, y = dataset[indices]
+    # boards, turns = decode_board_states(x, m, n)
 
-    # Pass outcomes (y values) to the visualization function
-    visualize_grid_of_boards(boards, turns, y)
+    # # Pass outcomes (y values) to the visualization function
+    # visualize_grid_of_boards(boards, turns, y)
+
+
+    activations = {}
+    path = f'{models_directory}/{args.model}/{args.game}'
+    epochs = list_directory(path)
+    model = MLPClassifier(input_dim=64, num_classes=3)
+    for epoch in epochs:
+        activations[int(epoch)] = pd.read_pickle(f'models/{model.name()}/{args.game}/{epoch}/activations.pkl')
+    activation = activations[0]
+    print(type(activation))
+    print(activation)
+
 
     plt.tight_layout()
     plt.show()
-
-    return board, turn
