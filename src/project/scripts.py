@@ -3,7 +3,10 @@ import argparse
 from project.training import train_utility_evaluator
 from project.models.mlp import MLPClassifier
 from project.activations import generate_model_activations
-from project.utils.visualization import feature_vis
+from project.utils.plotting import (
+    plot_metric_over_epochs,
+    plot_multiple_metrics,
+)
 from project.activations import train_probes_on_checkpoints
 
 
@@ -80,24 +83,48 @@ def train_probes():
 
 
 def feature_visualization():
-    parser = argparse.ArgumentParser(
-        prog="feature-visualization",
-        description=("Visualize features from a trained neural network.",),
+    plot_metric_over_epochs(
+        metric="util-eval-epoch-train-loss",
+        filename="train-loss",
+        y_label="Training Loss",
     )
 
-    parser.add_argument(
-        "-g",
-        "--game",
-        help="Game variant to generate activations for.",
-        default="mnk_3_3_3",
+    accuracy_metrics_info = [
+        {"metric": "util-eval-epoch-train-accu", "label": "Training"},
+        {"metric": "util-eval-epoch-valid-accu", "label": "Validation"},
+    ]
+
+    plot_multiple_metrics(
+        metrics_info=accuracy_metrics_info,
+        filename="evauator_accuracy_metrics",
+        y_label="Accuracy",
     )
 
-    parser.add_argument(
-        "-m",
-        "--model",
-        help="Model to generate activations for.",
-        default=f"{MLPClassifier.name()}",
+    loss_metrics_info = [
+        {"metric": "util-eval-epoch-train-loss", "label": "Training"},
+        {"metric": "util-eval-epoch-valid-loss", "label": "Validation"},
+    ]
+
+    plot_multiple_metrics(
+        metrics_info=loss_metrics_info,
+        filename="evauator_loss_metrics",
+        y_label="Loss",
     )
 
-    args = parser.parse_args()
-    feature_vis(args)
+    probe_mse_info = [
+        {
+            "metric": "util-eval-epoch-train-loss",
+            "label": "Validation Accuracy",
+        },
+        {"metric": "probe-mse-ply", "label": "ply"},
+        {"metric": "probe-mse-corner_count", "label": "corner_count"},
+        {"metric": "probe-mse-center_control", "label": "center_control"},
+        {"metric": "probe-mse-edge_count", "label": "edge_count"},
+        {"metric": "probe-mse-fork_exists", "label": "fork_exists"},
+    ]
+
+    plot_multiple_metrics(
+        metrics_info=probe_mse_info,
+        filename="probe-vs-model",
+        y_label="MSE",
+    )
