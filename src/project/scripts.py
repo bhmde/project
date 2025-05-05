@@ -4,9 +4,9 @@ from project.training import train_utility_evaluator
 from project.models.mlp import MLPClassifier
 from project.activations import generate_model_activations
 from project.utils.plotting import (
-    plot_metric_over_epochs,
     plot_multiple_metrics,
 )
+from project.utils.visualization import run_visualizations
 from project.activations import train_probes_on_checkpoints
 
 
@@ -82,13 +82,7 @@ def train_probes():
     train_probes_on_checkpoints(args.game, args.model)
 
 
-def feature_visualization():
-    plot_metric_over_epochs(
-        metric="util-eval-epoch-train-loss",
-        filename="train-loss",
-        y_label="Training Loss",
-    )
-
+def run_visualization():
     accuracy_metrics_info = [
         {"metric": "util-eval-epoch-train-accu", "label": "Training"},
         {"metric": "util-eval-epoch-valid-accu", "label": "Validation"},
@@ -128,3 +122,4 @@ def feature_visualization():
         filename="probe-vs-model",
         y_label="MSE",
     )
+    run_visualizations(args)

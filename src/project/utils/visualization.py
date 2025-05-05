@@ -2,12 +2,14 @@ import torch
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 from project.data.utility import utility_dataframe
 from project.utils.datasets import tensor_dataset
 from project.activations import list_directory
 from project.utils.checkpoints import models_directory, load_model_epoch
 from project.models.mlp import MLPClassifier
+
 
 def decode_board_states(state: torch.Tensor, m: int, n: int) -> torch.Tensor:
     """
@@ -173,7 +175,116 @@ def visualize_grid_of_boards(boards, turns=None, outcomes=None):
     return fig, axes
 
 
-def feature_vis(args):
+def run_pca_on_activations(activation_df, n_components=2, act_prefix="act_"):
+    """
+    Run PCA on activation columns of a DataFrame.
+
+    Parameters:
+    -----------
+    activation_df : pandas.DataFrame
+        DataFrame containing activation columns
+    n_components : int, default=2
+        Number of principal components to compute
+    act_prefix : str, default='act_'
+        Prefix of column names to select for PCA
+
+    Returns:
+    --------
+    tuple: (pca_result, pca_model, activation_columns)
+        - pca_result: DataFrame with principal components
+        - pca_model: fitted PCA model
+        - activation_columns: list of column names used for PCA
+    """
+    # Get the activation columns (those starting with act_prefix)
+    activation_columns = [
+        col for col in activation_df.columns if col.startswith(act_prefix)
+    ]
+
+    # Extract activation data
+    X = activation_df[activation_columns].values
+
+    # Apply PCA
+    pca = PCA(n_components=n_components)
+    pca_result = pca.fit_transform(X)
+
+    # Create a DataFrame with the PCA results
+    pca_df = pd.DataFrame(
+        data=pca_result, columns=[f"PC{i+1}" for i in range(n_components)]
+    )
+
+    return pca_df, pca, activation_columns
+
+
+def plot_pca(
+    pca_df,
+    activation_df,
+    pca_model,
+    color_by="utility",
+    title="PCA of Neural Network Activations",
+    ax=None,
+):
+    """
+    Plot PCA results with color coding based on a parameter.
+
+    Parameters:
+    -----------
+    pca_df : pandas.DataFrame
+        DataFrame containing principal components
+    activation_df : pandas.DataFrame
+        Original DataFrame containing activation and other columns
+    pca_model : sklearn.decomposition.PCA
+        Fitted PCA model
+    color_by : str, default='utility'
+        Column name to use for color coding the points
+    title : str, default="PCA of Neural Network Activations"
+        Title for the plot
+    ax : matplotlib.axes.Axes, default=None
+        Optional matplotlib axes object. If None, a new figure is created.
+    """
+    # Create figure if ax not provided
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(15, 15))
+    else:
+        fig = ax.figure
+
+    # Check if color_by column exists in the DataFrame
+    if color_by in activation_df.columns:
+        # Get color values
+        colors = activation_df[color_by].values
+
+        # Scatter plot of first two principal components with color coding
+        scatter = ax.scatter(
+            pca_df["PC1"],
+            pca_df["PC2"],
+            c=colors,
+            cmap="viridis",
+            alpha=0.7,
+            edgecolors="w",
+            linewidth=0.5,
+        )
+
+        # Add colorbar
+        cbar = plt.colorbar(scatter, ax=ax)
+        cbar.set_label(color_by)
+    else:
+        # Fallback if column doesn't exist
+        scatter = ax.scatter(pca_df["PC1"], pca_df["PC2"], alpha=0.7)
+        print(
+            f"Warning: Column '{color_by}' not found. Plotting without color coding."
+        )
+
+    # Add labels and title
+    ax.set_xlabel(f"PC1 ({pca_model.explained_variance_ratio_[0]:.2%})")
+    ax.set_ylabel(f"PC2 ({pca_model.explained_variance_ratio_[1]:.2%})")
+    ax.set_title(title)
+
+    # Add grid
+    ax.grid(True, linestyle="--", alpha=0.7)
+
+    return fig, ax
+
+
+def run_visualizations(args):
     ### mwe of board visualization. proper feature vis next
 
     df = utility_dataframe(game=args.game)
@@ -214,17 +325,82 @@ def feature_vis(args):
     # # Pass outcomes (y values) to the visualization function
     # visualize_grid_of_boards(boards, turns, y)
 
-
-    activations = {}
-    path = f'{models_directory}/{args.model}/{args.game}'
+    activation_dfs = {}
+    path = f"{models_directory}/{args.model}/{args.game}"
     epochs = list_directory(path)
     model = MLPClassifier(input_dim=64, num_classes=3)
     for epoch in epochs:
-        activations[int(epoch)] = pd.read_pickle(f'models/{model.name()}/{args.game}/{epoch}/activations.pkl')
-    activation = activations[0]
-    print(type(activation))
-    print(activation)
+        activation_dfs[int(epoch)] = pd.read_pickle(
+            f"models/{model.name()}/{args.game}/{epoch}/activations.pkl"
+        )
 
+        activation_cols = [c for c in df.columns if c.startswith("act")]
+        X = df[activation_cols].values  # shape (N, D)
 
-    plt.tight_layout()
+    for interpretable_feature in [
+        # 'remoteness',
+        # 'orbit_rep',
+        # 'fork_exists',
+        # 'ply',
+        # 'center_control',
+        # 'corner_count',
+        # 'edge_count',
+        "utility"
+    ]:
+        # Get sorted epochs (newest first)
+        sorted_epochs = reversed(sorted(activation_dfs.keys()))
+        epochs_list = list(sorted_epochs)
+        n_epochs = len(epochs_list)
+
+        # Create a grid of subplots for each epoch
+        n_cols = min(3, n_epochs)  # Max 3 plots per row
+        n_rows = (n_epochs + n_cols - 1) // n_cols
+
+        fig, axes = plt.subplots(
+            n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows)
+        )
+        fig.suptitle(f"{interpretable_feature}", fontsize=16)
+
+        # Ensure axes is a 2D array for consistent indexing
+        if n_rows == 1 and n_cols == 1:
+            axes = np.array([[axes]])
+        elif n_rows == 1:
+            axes = np.array([axes])
+        elif n_cols == 1:
+            axes = axes.reshape(-1, 1)
+
+        # Create a PCA plot for each epoch
+        for i, epoch in enumerate(epochs_list):
+            row = i // n_cols
+            col = i % n_cols
+
+            activation_df = activation_dfs[epoch]
+            pca_df, pca, activation_columns = run_pca_on_activations(
+                activation_df
+            )
+
+            plot_pca(
+                pca_df,
+                activation_df,
+                pca,
+                color_by=interpretable_feature,
+                title=f"Epoch {epoch}",
+                ax=axes[row, col],
+            )
+
+        # Hide unused subplots if any
+        for i in range(n_epochs, n_rows * n_cols):
+            row = i // n_cols
+            col = i % n_cols
+            axes[row, col].axis("off")
+
+        plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust for suptitle
+
+        # Save figure to file
+        plt.savefig(
+            f"pca_{interpretable_feature}_epochs.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
+
     plt.show()
