@@ -4,3 +4,4 @@ reports/**
 models
 reports
 .DS_Store
+src/project/debug.py

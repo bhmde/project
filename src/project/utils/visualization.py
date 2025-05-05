@@ -33,13 +33,14 @@ def decode_board_states(state: torch.Tensor, m: int, n: int) -> torch.Tensor:
     return board.to(int), turn
 
 
-def draw_board(board, turn=None, ax=None):
+def draw_board(board, turn=None, outcome=None, ax=None):
     """
     Draw a game board visualization.
 
     Args:
         board: Tensor of shape (M, N) representing the board state
         turn: Optional scalar indicating whose turn it is (0 for X, 1 for O)
+        outcome: Optional scalar for the game outcome (1=win, 0=tie, -1=loss)
         ax: Optional matplotlib axes object. If None, a new figure is created.
 
     Returns:
@@ -100,11 +101,20 @@ def draw_board(board, turn=None, ax=None):
     ax.set_xticks([])
     ax.set_yticks([])
 
-    # Set title indicating current player's turn
+    # Set title indicating current player's turn and outcome
+    title = []
+
     if turn is not None:
-        ax.set_title(
-            f"Current Player: {'X' if turn == 0 else 'O'}", fontsize=16
+        title.append(f"Player: {'X' if turn == 0 else 'O'}")
+
+    if outcome is not None:
+        outcome_text = {1: "Win", 0: "Tie", -1: "Loss"}.get(
+            int(outcome), "Unknown"
         )
+        title.append(f"Outcome: {outcome_text}")
+
+    if title:
+        ax.set_title(" | ".join(title), fontsize=16)
 
     # Ensure square cells
     ax.set_aspect("equal")
@@ -113,13 +123,14 @@ def draw_board(board, turn=None, ax=None):
 
 
 # Example of using draw_board with multiple boards in a grid layout
-def visualize_grid_of_boards(boards, turns=None):
+def visualize_grid_of_boards(boards, turns=None, outcomes=None):
     """
     Visualize a sequence of game boards in a grid layout.
 
     Args:
         boards: List of board tensors or single tensor with first dimension as sequence
         turns: Optional list of turn indicators
+        outcomes: Optional list of game outcomes (1=win, 0=tie, -1=loss)
     """
     if isinstance(boards, torch.Tensor) and boards.dim() == 3:
         # Convert to list of boards
@@ -132,16 +143,23 @@ def visualize_grid_of_boards(boards, turns=None):
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(3 * n_cols, 3 * n_rows))
 
     # Convert to numpy array for easier indexing
-    if n_rows == 1:
+    if n_rows == 1 and n_cols == 1:
+        axes = np.array([[axes]])
+    elif n_rows == 1:
         axes = np.array([axes])
-    if n_cols == 1:
+    elif n_cols == 1:
         axes = axes.reshape(-1, 1)
 
     for i, board in enumerate(boards):
         row = i // n_cols
         col = i % n_cols
+
         turn = turns[i] if turns is not None and i < len(turns) else None
-        draw_board(board, turn, axes[row, col])
+        outcome = (
+            outcomes[i] if outcomes is not None and i < len(outcomes) else None
+        )
+
+        draw_board(board, turn, outcome, axes[row, col])
 
     # Hide unused subplots
     for i in range(n_boards, n_rows * n_cols):
@@ -164,9 +182,12 @@ def feature_vis(args):
     n = int(parts[2])  # Second number
 
     dataset = tensor_dataset(df=df, label="utility")
+
+    # Example of a single board visualization
     x, y = dataset[20]
     print(x)
     print(x.shape)
+    print(f"Outcome: {y.item()}")
 
     # Decode the game state
     board, turn = decode_board_states(x.unsqueeze(0), m, n)
@@ -177,13 +198,19 @@ def feature_vis(args):
     print("board.shape", board.shape)
     print("turn.shape", turn.shape)
 
-    # Use the modular draw_board function
+    # Use the modular draw_board function with outcome
     fig, ax = plt.subplots(figsize=(8, 8))
-    draw_board(board, turn, ax)
+    draw_board(board, turn, y.item(), ax)
+    plt.tight_layout()
 
-    x, y = dataset[:20]
+    # Visualize a grid of random boards with their outcomes
+    n_examples = 20
+    indices = torch.randint(0, len(dataset), (n_examples,))
+    x, y = dataset[indices]
     boards, turns = decode_board_states(x, m, n)
-    visualize_grid_of_boards(boards, turns)
+
+    # Pass outcomes (y values) to the visualization function
+    visualize_grid_of_boards(boards, turns, y)
 
     plt.tight_layout()
     plt.show()
