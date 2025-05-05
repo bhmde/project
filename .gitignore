@@ -1,7 +1,7 @@
 __pycache__/
-models/**
-reports/**
-models
-reports
+/models/**
+/reports/**
+/models
+/reports
 .DS_Store
 src/project/debug.py
