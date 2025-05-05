@@ -36,12 +36,12 @@ def generate_checkpoint_activations(game: str, epoch: str, into: str):
     df = utility_dataframe(game=game)
     ds = tensor_dataset(df=df, label="utility")
     _, loader = data_loaders(ds=ds, split=0.1, batch=1)
-    
+
     records = []
     for X_batch, y_batch in loader:
         activations.clear()
         _ = model(X_batch)
-    
+
         rec = dict()
         act = activations[layer_observed]
         for i in act.numpy():
@@ -49,7 +49,7 @@ def generate_checkpoint_activations(game: str, epoch: str, into: str):
                 rec[f"act_{j}"] = float(val)
             rec | X_batch.numpy()
             records.append(rec)
-    
+
     df = pd.DataFrame.from_records(records)
     print(df.columns)
 
