@@ -9,6 +9,21 @@ from project.utils.datasets import tensor_dataset
 from project.data.utility import utility_dataframe_interp
 from project.utils.checkpoints import models_directory, load_model_epoch
 from project.models.mlp import MLPClassifier
+from project.training import fit_ols_probe
+
+
+def train_probes_on_checkpoints(game: str, model: str):
+    path = f"{models_directory}/{model}/{game}"
+    epochs = list_directory(path)
+    features = []
+    for f in features:
+        for e in epochs:
+            dir = f"{path}/{e}"
+            fit_ols_probe(
+                epoch_dir=dir,
+                feature=f,
+                shuffle=False,
+            )
 
 
 def generate_model_activations(game: str, model: str):

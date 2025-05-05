@@ -51,6 +51,33 @@ def generate_activations():
     generate_model_activations(args.game, args.model)
 
 
+def train_probes():
+
+    parser = argparse.ArgumentParser(
+        prog="train-probes",
+        description=(
+            "Generate trained linear probes per interpretable feature per pt.",
+        ),
+    )
+
+    parser.add_argument(
+        "-g",
+        "--game",
+        help="Game variant to train probes for.",
+        default="mnk_3_3_3",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--model",
+        help="Model to train probes for.",
+        default=f"{MLPClassifier.name()}",
+    )
+
+    args = parser.parse_args()
+    generate_model_activations(args.game, args.model)
+
+
 def feature_visualization():
     parser = argparse.ArgumentParser(
         prog="feature-visualization",

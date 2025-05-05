@@ -1,9 +1,10 @@
+import os
 import torch
 import numpy as np
 import pandas as pd
 import torch.nn as nn
 import torch.optim as optim
-from typing import Dict
+from typing import Optional
 
 from project.data.utility import utility_dataframe
 from project.models.mlp import MLPClassifier
@@ -42,67 +43,82 @@ def train_utility_evaluator(game: str):
             )
 
 
-def fit_ols_probes(
-    activations_pkl: str,
-    output_weights_path: str,
-    device: torch.device = None,
+def fit_ols_probe(
+    epoch_dir: str,
+    feature: str,
+    shuffle: bool,
+    device: Optional[torch.device] = None,
     fit_intercept: bool = True,
-) -> Dict[str, Dict[str, torch.Tensor]]:
+) -> torch.nn.Module:
     """
-    Load activations from a pickled DataFrame, fit one OLS linear probe per
-    interpretable feature, save all probe weights to disk, and return the
-    dict of state_dicts.
+    Load activations from `{epoch_dir}/activations.pkl`, fit an OLS probe
+    to predict `feature`, and save the probe weights to
+    `{epoch_dir}/probes/ols/{feature}.pkl`.
+
+    Args:
+        epoch_dir: Directory containing activations.pkl and will be saved.
+        feature: The target column name to fit.
+        device: torch.device (defaults to CPU or CUDA if available).
+        fit_intercept: Whether to include a bias term.
+
+    Returns:
+        probe: A LinearProbe with weights set to the OLS solution.
     """
 
-    # 1) set device
+    # 1) determine file paths
+    pkl_file = os.path.join(epoch_dir, "activations.pkl")
+    weights_file = os.path.join(epoch_dir, "probes", "ols", f"{feature}.pkl")
+    os.makedirs(os.path.dirname(weights_file), exist_ok=True)
+
+    # 2) set device
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # 2) load DataFrame
-    df = pd.read_pickle(activations_pkl)
+    # 3) load DataFrame
+    df = pd.read_pickle(pkl_file)
 
-    # 3) split activation vs interp columns
-    activation_cols = [c for c in df.columns if c.startswith("activation_")]
-    interp_cols = [c for c in df.columns if c.startswith("interp_")]
+    # 4) extract activations and target
+    activation_cols = [c for c in df.columns if c.startswith("act")]
+    if feature not in df.columns:
+        raise KeyError(f"Feature '{feature}' not found in {pkl_file}")
 
     X = df[activation_cols].values  # shape (N, D)
+    y = df[feature].values  # shape (N,)
+
+    if shuffle:
+        np.random.shuffle(y)
+
+    # 5) prepare for OLS
     N, D = X.shape
+    y = y[:, None]  # (N,1)
+    if fit_intercept:
+        X_design = np.hstack([X, np.ones((N, 1), dtype=X.dtype)])
+    else:
+        X_design = X
 
-    probes_state = {}
+    # 6) solve least squares
+    w_aug, *_ = np.linalg.lstsq(X_design, y, rcond=None)
 
-    # 4) for each interpretable feature, solve OLS
-    for feat in interp_cols:
-        y = df[feat].values
-        # ensure 2D
-        if y.ndim == 1:
-            y = y[:, None]  # shape (N, 1)
-        # build design matrix
-        if fit_intercept:
-            X_design = np.hstack([X, np.ones((N, 1), dtype=X.dtype)])
-        else:
-            X_design = X
-        # solve least squares
-        w_aug, *_ = np.linalg.lstsq(X_design, y, rcond=None)
-        # extract weights & bias
-        if fit_intercept:
-            W = w_aug[:-1, :].T  # (K, D)
-            b = w_aug[-1, :]  # (K,)
-        else:
-            W = w_aug.T  # (K, D)
-            b = np.zeros(y.shape[1], dtype=X.dtype)
-        # instantiate probe & assign
-        output_dim = y.shape[1]
-        probe = LinearProbe(input_dim=D, output_dim=output_dim).to(device)
-        probe.linear.weight.data = torch.from_numpy(W).to(device).float()
-        probe.linear.bias.data = torch.from_numpy(b).to(device).float()
+    # 7) unpack weights and bias
+    if fit_intercept:
+        W = w_aug[:-1, :].T  # shape (1, D)
+        b = float(w_aug[-1, 0])
+    else:
+        W = w_aug.T  # shape (1, D)
+        b = 0.0
 
-        probes_state[feat] = probe.state_dict()
+    # 8) create probe and load params
+    probe = LinearProbe(input_dim=D, output_dim=1).to(device)
+    probe.linear.weight.data = torch.from_numpy(W).to(device).float()
+    probe.linear.bias.data = torch.tensor(
+        [b], dtype=torch.float32, device=device
+    )
 
-    # 5) save all probe weights
-    torch.save(probes_state, output_weights_path)
-    print(f"Saved {len(probes_state)} OLS probes to {output_weights_path}")
+    # 9) save state_dict
+    torch.save(probe.state_dict(), weights_file)
+    print(f"Saved probe for '{feature}' to {weights_file}")
 
-    return probes_state
+    return probe
 
 
 # ----------------
