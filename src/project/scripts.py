@@ -3,6 +3,7 @@ import argparse
 from project.training import train_utility_evaluator
 from project.models.mlp import MLPClassifier
 from project.activations import generate_model_activations
+from project.utils.visualization import feature_vis
 
 
 def train_evaluator():
@@ -48,3 +49,27 @@ def generate_activations():
 
     args = parser.parse_args()
     generate_model_activations(args.game, args.model)
+
+
+def feature_visualization():
+    parser = argparse.ArgumentParser(
+        prog="feature-visualization",
+        description=("Visualize features from a trained neural network.",),
+    )
+
+    parser.add_argument(
+        "-g",
+        "--game",
+        help="Game variant to generate activations for.",
+        default="mnk_3_3_3",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--model",
+        help="Model to generate activations for.",
+        default=f"{MLPClassifier.name()}",
+    )
+
+    args = parser.parse_args()
+    feature_vis(args)

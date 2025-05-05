@@ -29,5 +29,5 @@ class MLPClassifier(nn.Module):
         logits = self.net(x)
         return logits
 
-    def name(self) -> str:
+    def name() -> str:
         return "MLPClassifier"

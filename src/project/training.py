@@ -34,7 +34,7 @@ def train_utility_evaluator(game: str):
 
         if epoch % 2 == 0:
             save_model_epoch(
-                epoch=epoch, game=game, name=model.name(), model=model
+                epoch=epoch, game=game, name=MLPClassifier.name(), model=model
             )
 
 

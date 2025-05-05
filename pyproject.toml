@@ -12,11 +12,18 @@ version = "0.1.0"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = ["pandas", "torch", "numpy", "argparse"]
+dependencies = [
+ "pandas",
+ "torch",
+ "numpy",
+ "argparse",
+ "matplotlib",
+]
 
 [project.scripts]
 train-evaluator = "project.scripts:train_evaluator"
 gen-activations = "project.scripts:generate_activations"
+feature-visualization = "project.scripts:feature_visualization"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/project"]
