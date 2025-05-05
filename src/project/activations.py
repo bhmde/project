@@ -6,7 +6,7 @@ from typing import List
 from torch.utils.data import DataLoader
 
 from project.utils.datasets import tensor_dataset
-from project.data.utility import utility_dataframe
+from project.data.utility import utility_dataframe_interp
 from project.utils.checkpoints import models_directory, load_model_epoch
 from project.models.mlp import MLPClassifier
 
@@ -62,8 +62,11 @@ def generate_checkpoint_activations(
     submods[layer].register_forward_hook(get_hook(layer))
 
     # --- 3) prepare data & loader ---
-    df = utility_dataframe(game=game).reset_index(drop=True)
-    ds = tensor_dataset(df=df, label="utility")
+    df = utility_dataframe_interp(game=game).reset_index(drop=True)
+    feature_cols = [f"state_bit{i}" for i in range(64)]
+    label_col = "utility"
+    df_reduced = df[feature_cols + [label_col]]
+    ds = tensor_dataset(df=df_reduced, label="utility")
     loader = DataLoader(ds, batch_size=batch_size, shuffle=False)
 
     # --- 4) run forward & collect in bulk ---

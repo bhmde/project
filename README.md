@@ -42,6 +42,8 @@ uv run <script>
 
 1. `train-evaluator`: Train a position evaluation MLP on a game, saving a progression of model checkpoints throughout training.
 
-2. [TODO] `gen-activations`: For each model checkpoint created during `train-evaluator`, generate a dataframe of its activations at a select layer on different datapoints, labeled by the datapoint which generated those activations (along with any attached interpretable features).
+2. `gen-activations`: For each model checkpoint created during `train-evaluator`, generate a dataframe of its activations at a select layer on different datapoints together with the datapoint (game state) which generated those activations (and the interpretable features of that state).
 
 3. [TODO] `train-probes`: For each dataframe generated during `gen-activations`, train a linear probe to predict select features associated with the input state that generated those activations. 
+
+4. [TODO] `feature-visualization`: Visualize the learned features...
