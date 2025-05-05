@@ -17,10 +17,10 @@ def train_probes_on_checkpoints(game: str, model: str):
     epochs = list_directory(path)
     features = [
         "fork_exists",
-        "ply",
         "center_control",
         "corner_count",
         "edge_count",
+        "ply",
     ]
 
     for f in features:
