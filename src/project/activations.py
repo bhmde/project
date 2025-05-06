@@ -9,16 +9,16 @@ from project.utils.datasets import tensor_dataset
 from project.data.utility import utility_dataframe_interp
 from project.utils.checkpoints import models_directory, load_model_epoch
 from project.models.mlp import MLPClassifier
-from project.training import fit_ols_probe, log
+from project.training import fit_ols_probe, log, fit_class_probe
 
 
 def train_probes_on_checkpoints(game: str, model: str):
     path = f"{models_directory}/{model}/{game}"
     epochs = list_directory(path)
     features = [
-        "fork_exists",
         "center_control",
         "corner_count",
+        "fork_exists",
         "edge_count",
         "ply",
     ]
@@ -28,18 +28,33 @@ def train_probes_on_checkpoints(game: str, model: str):
             directory = f"{path}/{e}"
             mse = fit_ols_probe(
                 epoch_dir=directory,
-                feature=f,
                 shuffle=False,
+                feature=f,
             )
 
             control_mse = fit_ols_probe(
                 epoch_dir=directory,
-                feature=f,
                 shuffle=True,
+                feature=f,
+            )
+
+            loss = fit_class_probe(
+                epoch_dir=directory,
+                shuffle=False,
+                feature=f,
+            )
+
+            control_loss = fit_class_probe(
+                epoch_dir=directory,
+                shuffle=True,
+                feature=f,
             )
 
             log(f"probe-mse-{f}-control", control_mse)
             log(f"probe-mse-{f}", mse)
+
+            log(f"probe-ce-{f}-control", control_loss)
+            log(f"probe-ce-{f}", loss)
 
 
 def generate_model_activations(game: str, model: str):

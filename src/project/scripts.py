@@ -105,6 +105,8 @@ def run_visualization():
     args = parser.parse_args()
     run_visualizations(args)
 
+    # TRAINING METRICS
+
     accuracy_metrics_info = [
         {"metric": "util-eval-epoch-train-accu", "label": "Training"},
         {"metric": "util-eval-epoch-valid-accu", "label": "Validation"},
@@ -127,6 +129,8 @@ def run_visualization():
         y_label="Loss",
     )
 
+    # OLS PROBES
+
     probe_mse_info = [
         {
             "metric": "util-eval-epoch-train-loss",
@@ -141,6 +145,71 @@ def run_visualization():
 
     plot_multiple_metrics(
         metrics_info=probe_mse_info,
-        filename="probe-vs-model",
+        filename="probe-vs-model-ols",
+        y_label="MSE",
+    )
+
+    control_probe_mse_info = [
+        {
+            "metric": "util-eval-epoch-train-loss",
+            "label": "Validation Accuracy",
+        },
+        {"metric": "probe-mse-ply-control", "label": "ply"},
+        {"metric": "probe-mse-corner_count-control", "label": "corner_count"},
+        {
+            "metric": "probe-mse-center_control-control",
+            "label": "center_control",
+        },
+        {"metric": "probe-mse-edge_count-control", "label": "edge_count"},
+        {"metric": "probe-mse-fork_exists-control", "label": "fork_exists"},
+    ]
+
+    plot_multiple_metrics(
+        metrics_info=control_probe_mse_info,
+        filename="probe-vs-model-control-ols",
+        y_label="MSE",
+    )
+
+    # MULTICLASS PROBES
+
+    probe_ce_info = [
+        {
+            "metric": "util-eval-epoch-train-loss",
+            "label": "Validation Accuracy",
+        },
+        {"metric": "probe-ce-ply", "label": "ply"},
+        {"metric": "probe-ce-corner_count", "label": "corner_count"},
+        {
+            "metric": "probe-ce-center_control",
+            "label": "center_control",
+        },
+        {"metric": "probe-ce-edge_count", "label": "edge_count"},
+        {"metric": "probe-ce-fork_exists", "label": "fork_exists"},
+    ]
+
+    plot_multiple_metrics(
+        metrics_info=probe_ce_info,
+        filename="probe-vs-model-ce",
+        y_label="MSE",
+    )
+
+    control_probe_ce_info = [
+        {
+            "metric": "util-eval-epoch-train-loss",
+            "label": "Validation Accuracy",
+        },
+        {"metric": "probe-ce-ply-control", "label": "ply"},
+        {"metric": "probe-ce-corner_count-control", "label": "corner_count"},
+        {
+            "metric": "probe-ce-center_control-control",
+            "label": "center_control",
+        },
+        {"metric": "probe-ce-edge_count-control", "label": "edge_count"},
+        {"metric": "probe-ce-fork_exists-control", "label": "fork_exists"},
+    ]
+
+    plot_multiple_metrics(
+        metrics_info=control_probe_ce_info,
+        filename="probe-vs-model-control-ce",
         y_label="MSE",
     )

@@ -111,6 +111,7 @@ def plot_multiple_metrics(
         values = load_metric(name)
         if values.size == 0:
             raise ValueError(f"No data found for metric '{name}'")
+
         epochs = np.arange(1, len(values) + 1)
         ax.plot(epochs, values, label=label)
 
